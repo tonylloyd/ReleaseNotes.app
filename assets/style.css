@@ -1,0 +1,202 @@
+/* assets/style.css - Shared Public Release Notes Styles */
+
+body {
+    font-family: sans-serif;
+    background: #f8f9fa;
+    margin: 0;
+    padding: 2rem;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.header-banner {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.header-banner h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2rem;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 1.5rem;
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: bold;
+    border-radius: 4px;
+    text-transform: uppercase;
+    vertical-align: middle;
+    margin-left: 8px;
+}
+
+.badge-major {
+    background: #dc3545;
+    color: white;
+}
+
+.badge-minor {
+    background: #6c757d;
+    color: white;
+}
+
+.card {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 2rem;
+}
+
+.card img, .content-section img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.meta {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.title-row h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.4rem;
+}
+
+.summary-section {
+    font-weight: 500;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    color: #444;
+}
+
+.read-more {
+    display: inline-block;
+    margin-top: 1rem;
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.read-more:hover {
+    text-decoration: underline;
+}
+
+/* Older archive list styles */
+.archive-section {
+    background: white;
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    margin-bottom: 2rem;
+}
+
+.archive-section h3 {
+    margin-top: 0;
+    font-size: 1.1rem;
+    color: #555;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+.archive-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.archive-item {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #f1f1f1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+}
+
+.archive-item:last-child {
+    border-bottom: none;
+}
+
+.archive-date {
+    color: #6c757d;
+    font-size: 0.85rem;
+    margin-left: 1rem;
+    white-space: nowrap;
+}
+
+.archive-title {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.archive-title:hover {
+    text-decoration: underline;
+}
+
+/* Modal Popup Styling for Major Updates */
+#update-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    color: #dc3545;
+}
+
+.modal-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 1rem;
+    font-size: 1rem;
+}
+
+.modal-btn:hover {
+    background: #0056b3;
+}
