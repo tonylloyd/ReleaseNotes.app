@@ -1,4 +1,4 @@
-# ReleaseNotes.app
+# Release-Notes CMS
 A simple, standalone self-hosted release notes content management system built with PHP, PDO, and the Trumbowyg WYSIWYG editor. It features a tiered public feed, a dedicated secure admin dashboard, a JSON API, and an embeddable JavaScript widget for cross-site notifications.
 
 ---
