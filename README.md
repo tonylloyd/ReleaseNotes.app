@@ -52,7 +52,7 @@ release-notes-cms/
 1. **Upload Files**: Upload the complete project directory to your web server running PHP 7.4+ with PDO and MySQL/MariaDB enabled.
 2. **Run the Installer**: Open your web browser and navigate to the `install/` directory on your server:
    ```text
-   [https://your-domain.com/install/](https://your-domain.com/install/)
+   [https://your-domain.com/install/]
    ```
 3. **Complete the Setup Wizard**:
    - **Database Details**: Enter your MySQL Host, Database Name, Username, and Password.
@@ -79,7 +79,7 @@ To display your release notification badge and interactive update modal on any e
 
 1. **Copy the Code Snippet**:
    ```html
-   <script src="[https://your-cms-domain.com/assets/widget.js](https://your-cms-domain.com/assets/widget.js)"></script>
+   <script src="[https://your-cms-domain.com/assets/widget.js]"></script>
    ```
 2. **Where to Paste It**: 
    Open the HTML template or layout file of your external website, locate the closing `</body>` tag (usually at the very bottom of your HTML document), and paste the script tag **immediately before** `</body>`:
@@ -87,7 +87,7 @@ To display your release notification badge and interactive update modal on any e
        <!-- Your website content -->
        
        <!-- Paste the Release Notes widget script right here -->
-       <script src="[https://your-cms-domain.com/assets/widget.js](https://your-cms-domain.com/assets/widget.js)"></script>
+       <script src="[https://your-cms-domain.com/assets/widget.js]"></script>
    </body>
    </html>
    ```
