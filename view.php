@@ -9,7 +9,7 @@ if (!$id) {
     exit;
 }
 
-$stmt = $pdo->prepare("SELECT * FROM releases WHERE id = ?");
+$stmt = $pdo->prepare("SELECT * FROM " . TABLE_RELEASES . " WHERE id = ?");
 $stmt->execute([$id]);
 $release = $stmt->fetch();
 
