@@ -66,14 +66,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 "define('DB_PASS', " . var_export($dbPass, true) . ");\n" .
                 "define('DB_PREFIX', " . var_export($dbPrefix, true) . ");\n" .
                 "define('APP_NAME', " . var_export($appName, true) . ");\n\n" .
-                "try {\n" .
-                "    \$pdo = new PDO(\"mysql:host=\" . DB_HOST . \";dbname=\" . DB_NAME . \";charset=utf8mb4\", DB_USER, DB_PASS, [\n" .
-                "        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,\n" .
-                "        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC\n" .
-                "    ]);\n" .
-                "} catch (PDOException \$e) {\n" .
-                "    die('Database connection failed: ' . \$e->getMessage());\n" .
-                "}\n";
+                "\n" .
+                "// Display article limits on public feed.\n" .
+                "define('LIMIT_FULL', 1);    // Number of articles displayed in full view (header image, summary, and full content)\n" .
+                "define('LIMIT_INTRO', 5);   // Number of articles displayed in summary view (header image, summary, and read-more link)\n" .
+                "define('LIMIT_LIST', 10);   // Number of older articles displayed in the compact bulleted archive list\n" .
+                "\n";
 
             file_put_contents(__DIR__ . '/../config.php', $configContent);$success = true;
 
