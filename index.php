@@ -7,7 +7,7 @@ require_once __DIR__ . '/includes/db.php';
 $isEmbed = isset($_GET['embed']) && $_GET['embed'] == '1';
 
 // Fetch all releases for the public feed
-$stmt = $pdo->query("SELECT * FROM releases ORDER BY created_at DESC");
+$stmt = $pdo->query("SELECT * FROM " . TABLE_RELEASES . " ORDER BY created_at DESC");
 $releases = $stmt->fetchAll();
 
 // Get the latest release ID to check against visitor's local storage
