@@ -4,28 +4,21 @@
 session_start();
 require_once __DIR__ . '/../includes/db.php';
 
-// Check if logged in
+// Ensure user is logged in
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Location: index.php');
     exit;
 }
 
 $error = '';
-$title = '';
-$summary = '';
-$content = '';
-$type = 'minor';
-$custom_date = date('Y-m-d\TH:i');
+$success = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $title = trim($_POST['title'] ?? '');
+    $title   = trim($_POST['title'] ?? '');
+    $type    = $_POST['type'] ?? 'minor';
     $summary = trim($_POST['summary'] ?? '');
     $content = trim($_POST['content'] ?? '');
-    $type = $_POST['type'] === 'major' ? 'major' : 'minor';
-    $custom_date = trim($_POST['created_at'] ?? '');
-    
-    $created_at = !empty($custom_date) ? date('Y-m-d H:i:s', strtotime($custom_date)) : date('Y-m-d H:i:s');
-    
+    $date    = trim($_POST['created_at'] ?? '');
     $imageName = null;
 
     // Handle Image Upload
@@ -33,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fileTmpPath = $_FILES['image']['tmp_name'];
         $fileName = $_FILES['image']['name'];
         $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-        
+
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
         if (in_array($fileExtension, $allowedExtensions)) {
             $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
@@ -42,26 +35,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!is_dir($uploadFileDir)) {
                 mkdir($uploadFileDir, 0755, true);
             }
-            
+
             $dest_path = $uploadFileDir . $newFileName;
-            
             if (move_uploaded_file($fileTmpPath, $dest_path)) {
                 $imageName = $newFileName;
             } else {
                 $error = 'Error moving the uploaded file.';
             }
         } else {
-            $error = 'Invalid file type. Allowed types: JPG, PNG, WEBP.';
+            $error = 'Invalid image file type. Allowed types: JPG, PNG, WEBP.';
         }
     }
 
     if (empty($error)) {
         if (empty($title) || empty($summary) || empty($content)) {
-            $error = 'Please fill in all required text fields.';
+            $error = 'Please fill in all required fields.';
         } else {
-            $stmt = $pdo->prepare("INSERT INTO releases (title, summary, content, image, type, created_at) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$title, $summary, $content, $imageName, $type, $created_at]);
-            
+            // Use custom date if provided, otherwise default to NOW()
+            if (!empty($date)) {
+                $stmt = $pdo->prepare("INSERT INTO " . TABLE_RELEASES . " (title, type, summary, content, image, created_at) VALUES (?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$title, $type, $summary, $content, $imageName, $date]);
+            } else {
+                $stmt = $pdo->prepare("INSERT INTO " . TABLE_RELEASES . " (title, type, summary, content, image, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
+                $stmt->execute([$title, $type, $summary, $content, $imageName]);
+            }
             header('Location: index.php');
             exit;
         }
@@ -74,69 +71,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <title>New Release - Release Notes CMS</title>
     <link rel="stylesheet" href="../assets/admin.css">
-    <!-- jQuery -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <!-- Trumbowyg CSS & JS -->
+    <!-- Trumbowyg CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Trumbowyg/2.27.3/ui/trumbowyg.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Trumbowyg/2.27.3/trumbowyg.min.js"></script>
-    <script>
-        $(document).ready(function(){
-            $('.wysiwyg-editor').trumbowyg({
-                btns: [
-                    ['viewHTML'],
-                    ['formatting'],
-                    ['strong', 'em', 'del'],
-                    ['link'],
-                    ['insertImage'],
-                    ['justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'],
-                    ['unorderedList', 'orderedList'],
-                    ['horizontalRule'],
-                    ['removeformat']
-                ],
-                autogrow: true
-            });
-        });
-    </script>
 </head>
 <body>
-<div class="container">
-    <h1>Create New Release</h1>
-    
+<div class="container" style="max-width: 800px;">
+    <header>
+        <h1>Create New Release</h1>
+        <a href="index.php" class="btn btn-secondary">&larr; Back to Dashboard</a>
+    </header>
+
     <?php if (!empty($error)): ?>
         <div class="error"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
     <form method="POST" enctype="multipart/form-data">
-        <label>Release Title</label>
-        <input type="text" name="title" value="<?= htmlspecialchars($title) ?>" required>
-
-        <label>Update Type</label>
-        <select name="type">
-            <option value="minor" <?= $type === 'minor' ? 'selected' : '' ?>>Minor Update (Badge Notification)</option>
-            <option value="major" <?= $type === 'major' ? 'selected' : '' ?>>Major Update (Forced Popup Notification)</option>
-        </select>
-
-        <label>Publish Date & Time</label>
-        <input type="datetime-local" name="created_at" value="<?= htmlspecialchars($custom_date) ?>" required>
-
-        <label>Header Banner Image (Optional)</label>
-        <input type="file" name="image" accept="image/jpeg,image/png,image/webp">
-
-        <div class="field-group">
-            <label>Summary (Introduction Paragraph)</label>
-            <textarea name="summary" class="wysiwyg-editor"><?= htmlspecialchars($summary) ?></textarea>
+        <div class="form-group">
+            <label>Release Title</label>
+            <input type="text" name="title" value="<?= htmlspecialchars($_POST['title'] ?? '') ?>" required>
         </div>
 
-        <div class="field-group">
-            <label>Full Content Details</label>
-            <textarea name="content" class="wysiwyg-editor"><?= htmlspecialchars($content) ?></textarea>
+        <div class="form-group">
+            <label>Update Type</label>
+            <select name="type">
+                <option value="minor">Minor Update (Notification badge dot)</option>
+                <option value="major">Major Update (Popup modal alert)</option>
+            </select>
         </div>
 
-        <div>
-            <a href="index.php" class="btn btn-secondary">Cancel</a>
-            <button type="submit" class="btn">Publish Release</button>
+        <div class="form-group">
+            <label>Publish Date & Time (Optional - defaults to current time)</label>
+            <input type="datetime-local" name="created_at" value="<?= htmlspecialchars($_POST['created_at'] ?? '') ?>">
         </div>
+
+        <div class="form-group">
+            <label>Header Banner Image (Optional)</label>
+            <input type="file" name="image" accept="image/png, image/jpeg, image/webp">
+        </div>
+
+        <div class="form-group">
+            <label>Summary (Short excerpt shown in feeds and modals)</label>
+            <textarea name="summary" rows="3" required><?= htmlspecialchars($_POST['summary'] ?? '') ?></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Full Content</label>
+            <textarea name="content" id="editor" rows="10" required><?= htmlspecialchars($_POST['content'] ?? '') ?></textarea>
+        </div>
+
+        <button type="submit" class="btn">Publish Release</button>
     </form>
 </div>
+
+<!-- jQuery and Trumbowyg JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Trumbowyg/2.27.3/trumbowyg.min.js"></script>
+<script>
+    $('#editor').trumbowyg();
+</script>
 </body>
 </html>
