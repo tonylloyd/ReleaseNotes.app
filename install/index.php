@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $adminUser = trim($_POST['admin_user'] ?? '');
     $adminPass =$_POST['admin_pass'] ?? '';
 
-    if (empty($dbHost) \vert{}\vert{} empty($dbName) || empty($dbUser) \vert{}\vert{} empty($adminUser) || empty($adminPass)) {$error = 'Please fill in all required fields.';
+    if (empty($dbHost) || empty($dbName) || empty($dbUser) || empty($adminUser) || empty($adminPass)) {$error = 'Please fill in all required fields.';
     } else {
         try {
             // Test connection
