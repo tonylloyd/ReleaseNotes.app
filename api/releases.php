@@ -7,7 +7,7 @@ header('Access-Control-Allow-Origin: *'); // Allow external sites to query the b
 require_once __DIR__ . '/../includes/db.php';
 
 try {
-    $stmt = $pdo->query("SELECT id, title, type, created_at FROM releases ORDER BY created_at DESC LIMIT 1");
+    $stmt = $pdo->query("SELECT id, type FROM " . TABLE_RELEASES . " ORDER BY created_at DESC LIMIT 1");
     $latest = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($latest) {
