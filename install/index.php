@@ -1,71 +1,85 @@
 <?php
-// install/index.php - Simple setup wizard
+// install/index.php - Installation Wizard
 
-// Check if already installed in includes/
-if (file_exists('../includes/config.php')) {
-    die('The application is already installed. Delete /includes/config.php to reinstall.');
-}
-
-$error = '';
+$error = '';$success = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $db_host = trim($_POST['db_host'] ?? '');
-    $db_name = trim($_POST['db_name'] ?? '');
-    $db_user = trim($_POST['db_user'] ?? '');
-    $db_pass =$_POST['db_pass'] ?? '';
-    $app_name = trim($_POST['app_name'] ?? 'Release Notes');
-    $app_url = trim($_POST['app_url'] ?? '');
+    $dbHost   = trim($_POST['db_host'] ?? '');
+    $dbName   = trim($_POST['db_name'] ?? '');
+    $dbUser   = trim($_POST['db_user'] ?? '');
+    $dbPass   =$_POST['db_pass'] ?? '';
+    $dbPrefix = trim($_POST['db_prefix'] ?? 'rn_');
+    $appName  = trim($_POST['app_name'] ?? 'Release Notes');
+    $adminUser = trim($_POST['admin_user'] ?? '');
+    $adminPass =$_POST['admin_pass'] ?? '';
 
-    // Test database connection
-    try {
-        $pdo = new PDO("mysql:host=$db_host;charset=utf8mb4", $db_user,$db_pass, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-        ]);
+    if (empty($dbHost) \vert{}\vert{} empty($dbName) || empty($dbUser) \vert{}\vert{} empty($adminUser) || empty($adminPass)) {$error = 'Please fill in all required fields.';
+    } else {
+        try {
+            // Test connection
+            $dsn = "mysql:host=$dbHost;charset=utf8mb4";
+            $pdo = new PDO($dsn, $dbUser,$dbPass, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+            ]);
 
-        // Create database if it doesn't exist
-        $pdo->exec("CREATE DATABASE IF NOT EXISTS `$db_name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-        $pdo->exec("USE `$db_name`");
+            // Create database if it doesn't exist
+            $pdo->exec("CREATE DATABASE IF NOT EXISTS `$dbName` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            $pdo->exec("USE `$dbName`");
 
-        // Create initial tables with summary, content, and image fields
-        $pdo->exec("
-            CREATE TABLE IF NOT EXISTS `releases` (
-                `id` INT AUTO_INCREMENT PRIMARY KEY,
-                `title` VARCHAR(255) NOT NULL,
-                `summary` TEXT NOT NULL,
-                `content` TEXT NOT NULL,
-                `image` VARCHAR(255) DEFAULT NULL,
-                `type` ENUM('minor', 'major') NOT NULL DEFAULT 'minor',
-                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB;
-        ");
+            // Create tables with prefix
+            $releasesTable =$dbPrefix . 'releases';
+            $usersTable =$dbPrefix . 'admin_users';
 
-        $pdo->exec("
-            CREATE TABLE IF NOT EXISTS `admin_users` (
-                `id` INT AUTO_INCREMENT PRIMARY KEY,
-                `username` VARCHAR(100) NOT NULL,
-                `password_hash` VARCHAR(255) NOT NULL
-            ) ENGINE=InnoDB;
-        ");
+            $pdo->exec("CREATE TABLE IF NOT EXISTS `$releasesTable` (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                type ENUM('minor', 'major') DEFAULT 'minor',
+                summary TEXT NOT NULL,
+                content LONGTEXT NOT NULL,
+                image VARCHAR(255) DEFAULT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB;");
 
-        // Create default admin user
-        $default_pass = password_hash('password123', PASSWORD_DEFAULT);
-        $stmt =$pdo->prepare("INSERT INTO admin_users (username, password_hash) VALUES (?, ?)");
-        $stmt->execute(['admin',$default_pass]);
+            $pdo->exec("CREATE TABLE IF NOT EXISTS `$usersTable` (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(100) NOT NULL UNIQUE,
+                password VARCHAR(255) NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB;");
 
-        // Write config.php into the includes folder
-        $config_content = "<?php\n" .
-            "define('DB_HOST', " . var_export($db_host, true) . ");\n" .
-            "define('DB_NAME', " . var_export($db_name, true) . ");\n" .
-            "define('DB_USER', " . var_export($db_user, true) . ");\n" .
-            "define('DB_PASS', " . var_export($db_pass, true) . ");\n" .
-            "define('APP_NAME', " . var_export($app_name, true) . ");\n" .
-            "define('APP_URL', " . var_export($app_url, true) . ");\n";
+            // Insert admin user if not exists
+            $stmt =$pdo->prepare("SELECT COUNT(*) FROM `$usersTable`");
+            $stmt->execute();
+            if ($stmt->fetchColumn() == 0) {
+                $hash = password_hash($adminPass, PASSWORD_DEFAULT);
+                $stmt =$pdo->prepare("INSERT INTO `$usersTable` (username, password) VALUES (?, ?)");
+                $stmt->execute([$adminUser,$hash]);
+            }
 
-        file_put_contents('../includes/config.php', $config_content);
+            // Generate config.php
+            $configContent = "<?php\n" .
+                "// config.php - Auto-generated during installation\n\n" .
+                "define('DB_HOST', " . var_export($dbHost, true) . ");\n" .
+                "define('DB_NAME', " . var_export($dbName, true) . ");\n" .
+                "define('DB_USER', " . var_export($dbUser, true) . ");\n" .
+                "define('DB_PASS', " . var_export($dbPass, true) . ");\n" .
+                "define('DB_PREFIX', " . var_export($dbPrefix, true) . ");\n" .
+                "define('APP_NAME', " . var_export($appName, true) . ");\n\n" .
+                "try {\n" .
+                "    \$pdo = new PDO(\"mysql:host=\" . DB_HOST . \";dbname=\" . DB_NAME . \";charset=utf8mb4\", DB_USER, DB_PASS, [\n" .
+                "        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,\n" .
+                "        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC\n" .
+                "    ]);\n" .
+                "} catch (PDOException \$e) {\n" .
+                "    die('Database connection failed: ' . \$e->getMessage());\n" .
+                "}\n";
 
-        $success = true;
-    } catch (PDOException $e) {
-        $error = 'Database Connection Failed: ' .$e->getMessage();
+            file_put_contents(__DIR__ . '/../config.php', $configContent);$success = true;
+
+        } catch (PDOException $e) {
+            $error = 'Database Error: ' .$e->getMessage();
+        }
     }
 }
 ?>
@@ -74,54 +88,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Install - Release Notes CMS</title>
+    <link rel="stylesheet" href="../assets/admin.css">
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        h2 { margin-top: 0; color: #333; }
-        label { display: block; margin-bottom: 0.5rem; font-weight: bold; font-size: 0.9rem; color: #555; }
-        input { width: 100%; padding: 0.5rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 0.75rem; background: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        .error { color: #dc3545; margin-bottom: 1rem; font-size: 0.9rem; }
-        .success { color: #28a745; text-align: center; }
+        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f4f6f8; margin: 0; }
+        .install-box { background: white; padding: 2.5rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); width: 100%; max-width: 450px; }
+        .install-box h2 { margin-top: 0; margin-bottom: 1.5rem; color: #1e293b; font-size: 1.5rem; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem; color: #475569; }
+        .form-group input { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 1rem; box-sizing: border-box; }
+        .btn-primary { width: 100%; padding: 0.75rem; background: #2563eb; color: white; border: none; border-radius: 4px; font-size: 1rem; font-weight: 500; cursor: pointer; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .error { background: #fee2e2; color: #991b1b; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; font-size: 0.875rem; }
+        .success-box { text-align: center; }
+        .success-box a { display: inline-block; margin-top: 1rem; padding: 0.75rem 1.5rem; background: #16a34a; color: white; text-decoration: none; border-radius: 4px; font-weight: 500; }
     </style>
 </head>
 <body>
-<div class="card">
-    <h2>Install Release Notes</h2>
-    <?php if (!empty($error)): ?>
-        <div class="error"><?= htmlspecialchars($error) ?></div>
-    <?php endif; ?>
-    
-    <?php if (isset($success)): ?>
-        <div class="success">
-            <p><strong>Installation Complete!</strong></p>
-            <p>Default admin login: <code>admin</code> / <code>password123</code></p>
-            <p><small>Please delete the <code>install/</code> folder for security once you've checked it.</small></p>
+
+<div class="install-box">
+    <?php if ($success): ?>
+        <div class="success-box">
+            <h2>Installation Successful!</h2>
+            <p>Your database tables have been created with your chosen prefix and configuration has been saved.</p>
+            <p><strong>Security Notice:</strong> Please delete the <code>install/</code> folder from your server.</p>
+            <a href="../admin/">Go to Admin Dashboard</a>
         </div>
     <?php else: ?>
+        <h2>Release Notes Setup</h2>
+        <?php if ($error): ?>
+            <div class="error"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
         <form method="POST">
-            <label>Database Host</label>
-            <input type="text" name="db_host" value="localhost" required>
-
-            <label>Database Name</label>
-            <input type="text" name="db_name" required>
-
-            <label>Database Username</label>
-            <input type="text" name="db_user" required>
-
-            <label>Database Password</label>
-            <input type="password" name="db_pass">
-
-            <label>Application Name</label>
-            <input type="text" name="app_name" value="My Product Updates" required>
-
-            <label>Application URL (Domain/Subdomain)</label>
-            <input type="text" name="app_url" placeholder="https://example.com" required>
-
-            <button type="submit">Install Application</button>
+            <div class="form-group">
+                <label>Database Host</label>
+                <input type="text" name="db_host" value="localhost" required>
+            </div>
+            <div class="form-group">
+                <label>Database Name</label>
+                <input type="text" name="db_name" required>
+            </div>
+            <div class="form-group">
+                <label>Database Username</label>
+                <input type="text" name="db_user" required>
+            </div>
+            <div class="form-group">
+                <label>Database Password</label>
+                <input type="password" name="db_pass">
+            </div>
+            <div class="form-group">
+                <label>Table Prefix (e.g., rn_)</label>
+                <input type="text" name="db_prefix" value="rn_" required>
+            </div>
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 1.5rem 0;">
+            <div class="form-group">
+                <label>Application Name</label>
+                <input type="text" name="app_name" value="Product Updates" required>
+            </div>
+            <div class="form-group">
+                <label>Admin Username</label>
+                <input type="text" name="admin_user" value="admin" required>
+            </div>
+            <div class="form-group">
+                <label>Admin Password</label>
+                <input type="password" name="admin_pass" required>
+            </div>
+            <button type="submit" class="btn-primary">Complete Installation</button>
         </form>
     <?php endif; ?>
 </div>
+
 </body>
 </html>
