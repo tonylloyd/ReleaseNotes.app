@@ -18,11 +18,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    $stmt = $pdo->prepare("SELECT * FROM admin_users WHERE username = ?");
+    $stmt = $pdo->prepare("SELECT * FROM " . TABLE_USERS . " WHERE username = ?");
     $stmt->execute([$username]);
     $user = $stmt->fetch();
 
-    if ($user && password_verify($password, $user['password_hash'])) {
+    if ($user && password_verify($password, $user['password'])) {
         $_SESSION['admin_logged_in'] = true;
         $_SESSION['admin_user'] = $user['username'];
         header('Location: index.php');
@@ -70,7 +70,7 @@ if (isset($_GET['delete'])) {
     $del_id = filter_input(INPUT_GET, 'delete', FILTER_VALIDATE_INT);
     if ($del_id) {
         // Delete uploaded image file if exists
-        $stmt = $pdo->prepare("SELECT image FROM releases WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT image FROM " . TABLE_RELEASES . " WHERE id = ?");
         $stmt->execute([$del_id]);
         $rel = $stmt->fetch();
         if ($rel && !empty($rel['image'])) {
@@ -80,7 +80,7 @@ if (isset($_GET['delete'])) {
             }
         }
         
-        $stmt = $pdo->prepare("DELETE FROM releases WHERE id = ?");
+        $stmt = $pdo->prepare("DELETE FROM " . TABLE_RELEASES . " WHERE id = ?");
         $stmt->execute([$del_id]);
     }
     header('Location: index.php');
@@ -91,12 +91,12 @@ if (isset($_GET['delete'])) {
 if (isset($_GET['duplicate'])) {
     $dup_id = filter_input(INPUT_GET, 'duplicate', FILTER_VALIDATE_INT);
     if ($dup_id) {
-        $stmt = $pdo->prepare("SELECT title, summary, content, image, type FROM releases WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT title, summary, content, image, type FROM " . TABLE_RELEASES . " WHERE id = ?");
         $stmt->execute([$dup_id]);
         $rel = $stmt->fetch();
         if ($rel) {
             $newTitle = 'Copy of ' . $rel['title'];
-            $stmt = $pdo->prepare("INSERT INTO releases (title, summary, content, image, type, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
+            $stmt = $pdo->prepare("INSERT INTO " . TABLE_RELEASES . " (title, summary, content, image, type, created_at) VALUES (?, ?, ?, ?, ?, NOW())");
             $stmt->execute([$newTitle, $rel['summary'], $rel['content'], $rel['image'], $rel['type']]);
         }
     }
@@ -105,7 +105,7 @@ if (isset($_GET['duplicate'])) {
 }
 
 // Fetch all existing releases for the dashboard list
-$stmt = $pdo->query("SELECT * FROM releases ORDER BY created_at DESC");
+$stmt = $pdo->query("SELECT * FROM " . TABLE_RELEASES . " ORDER BY created_at DESC");
 $releases = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
