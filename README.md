@@ -74,6 +74,18 @@ release-notes-cms/
 - Visitors view all updates at your main feed URL (`https://your-domain.com/index.php`). 
 - The layout automatically adapts: the newest release is shown in full, the next 5 appear with summaries and "Read More" buttons, and older entries collapse into a clean chronological archive list.
 
+#### 2.1. Display Settings & Configuration
+
+You can customize how many release notes appear in each section of the public feed by adjusting the configuration constants in your `config.php` file. 
+Add or update the following lines in `config.php` to suit your layout preferences:
+```php
+// Display limits for the public feed
+define('LIMIT_FULL', 1);    // Number of articles displayed in full view (header image, summary, and full content)
+define('LIMIT_INTRO', 5);   // Number of articles displayed in summary view (header image, summary, and read-more link)
+define('LIMIT_LIST', 10);   // Number of older articles displayed in the compact bulleted archive list
+```
+Setting the value to 0 will hide the section (so if you do not want to display a FULL article first, set it to 0 and the page will only display INTRO and LIST articles).
+
 ### 3. Embedding the Widget on External Webpages
 To display your release notification badge and interactive update modal on any external website (such as your main web application, landing page, or client portal):
 
@@ -92,13 +104,3 @@ To display your release notification badge and interactive update modal on any e
    </html>
    ```
 3. **Behavior**: The script will automatically inject a floating "What's New" button with an unread badge indicator and open your CMS feed inside a responsive modal iframe when clicked.
-
-## Display Settings & Configuration
-
-You can customize how many release notes appear in each section of the public feed by adjusting the configuration constants in your `config.php` file. 
-Add or update the following lines in `config.php` to suit your layout preferences:
-```php
-// Display limits for the public feed
-define('LIMIT_FULL', 1);    // Number of articles displayed in full view (header image, summary, and full content)
-define('LIMIT_INTRO', 5);   // Number of articles displayed in summary view (header image, summary, and read-more link)
-define('LIMIT_LIST', 10);   // Number of older articles displayed in the compact bulleted archive list
